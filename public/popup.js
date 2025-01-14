@@ -1,0 +1,1 @@
+(()=>{"use strict";const e=document.getElementById("circleToggle"),c=document.getElementById("circleSwitch");if(!e||!c)throw new Error("Elements not found");e.addEventListener("change",(()=>{e.checked?(c.style.backgroundColor="#4CAF50",console.log("Switch is ON")):(c.style.backgroundColor="#ccc",console.log("Switch is OFF"))}))})();

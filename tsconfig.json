@@ -6,7 +6,7 @@
       "moduleResolution": "Node",
       "strict": true,
       "esModuleInterop": true,
-      "outDir": "dist",
+      "outDir": "public",
       "skipLibCheck": true
     },
     "include": ["src/**/*"]
