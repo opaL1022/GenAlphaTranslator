@@ -1,0 +1,1 @@
+{"version":3,"file":"popup.js","mappings":";;;;;AAAa;AACb;AACA;AACA,CAAC","sources":["webpack://genalphatranslator/./src/popup.ts"],"sourcesContent":["\"use strict\";\ndocument.getElementById('actionButton')?.addEventListener('click', () => {\n    alert('Button clicked!');\n});\n"],"names":[],"sourceRoot":""}

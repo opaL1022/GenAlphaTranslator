@@ -1,0 +1,1 @@
+{"version":3,"file":"background.js","mappings":";;;;;AAAa;AACb;AACA;AACA,CAAC","sources":["webpack://genalphatranslator/./src/background.ts"],"sourcesContent":["\"use strict\";\nchrome.runtime.onInstalled.addListener(() => {\n    console.log('Extension installed!');\n});\n"],"names":[],"sourceRoot":""}
