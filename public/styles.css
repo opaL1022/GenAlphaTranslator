@@ -33,3 +33,6 @@
     transform: translateX(50px); /* 圓形滑塊向右移動 */
 }
 
+#title {
+    color: #ccc; 
+}
