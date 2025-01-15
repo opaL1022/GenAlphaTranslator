@@ -1,0 +1,1 @@
+{"version":3,"file":"content.js","mappings":";;;;;AAAa;AACb","sources":["webpack://genalphatranslator/./src/content.ts"],"sourcesContent":["\"use strict\";\nconsole.log('Content script loaded!');\n"],"names":[],"sourceRoot":""}
