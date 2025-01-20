@@ -130,10 +130,10 @@ dist
 .pnp.*
 
 #images
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.ico
-*.webp
+# *.png
+# *.jpg
+# *.jpeg
+# *.gif
+# *.svg
+# *.ico
+# *.webp
