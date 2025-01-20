@@ -51,17 +51,37 @@ if (!dict) {
 }
 console.log(dict);
 console.log('Content script loaded!');
+let density = 0;
+function ensureDomReady(callback) {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        callback();
+    }
+    else {
+        // 如果 DOM 尚未準備好，等到 loaded 時再執行 callback
+        window.addEventListener('DOMContentLoaded', callback, { once: true });
+    }
+}
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "enable") {
-        enableFeature();
+        ensureDomReady(enableFeature);
+        sendResponse({ status: "success" });
     }
     else if (message.action === "disable") {
         disableFeature();
+        sendResponse({ status: "success" });
+    }
+    else if (message.sliderValue !== undefined) {
+        console.log("Received slider value:", message.sliderValue);
+        density = message.sliderValue;
+        window.location.reload();
+        ensureDomReady(enableFeature);
+        sendResponse({ status: "success" }); // 回應消息
+        return true;
     }
 });
 function enableFeature() {
     console.log("功能已啟用");
-    const convertTextToUppercase = (node) => {
+    const convertText = (node) => {
         if (node.nodeType === Node.TEXT_NODE) {
             const parent = node.parentElement;
             if (parent && !parent.dataset.modified) {
@@ -70,13 +90,23 @@ function enableFeature() {
                     let texts = node.nodeValue.split(/(\s+|[.,!?;(){}[\]"':])/).filter(Boolean);
                     for (let i = 0; i < texts.length; i++) {
                         let word = texts[i].toLowerCase();
+                        let cap = /^[A-Z]$/.test(texts[i].charAt(0));
                         if (word in dict) {
-                            let cap = /^[A-Z]$/.test(texts[i].charAt(0));
                             let text = dict[word][0];
                             context.push(cap ? text.charAt(0).toUpperCase() + text.slice(1) : text);
                         }
                         else {
-                            context.push(texts[i]);
+                            const randomNum = Math.floor(Math.random() * 100);
+                            if (randomNum < density) {
+                                const dictRand = Object.values(dict);
+                                const dictLen = dictRand.length;
+                                const dictRandNum = Math.floor(Math.random() * dictLen);
+                                let text = dictRand[dictRandNum][0]; //TODO 記得改
+                                context.push(cap ? text.charAt(0).toUpperCase() + text.slice(1) : text);
+                            }
+                            else {
+                                context.push(texts[i]);
+                            }
                         }
                     }
                 }
@@ -85,6 +115,19 @@ function enableFeature() {
             }
         }
     };
+    // function clearModifiedTags(): void {
+    //     const modifiedNodes = document.querySelectorAll('[data-modified="true"]');
+    //     modifiedNodes.forEach((node) => {
+    //       node.removeAttribute('data-modified'); // 移除標記
+    //       if (node.nodeType === Node.TEXT_NODE) {
+    //         const parent = node.parentElement;
+    //         if (parent) {
+    //           parent.normalize(); // 將文本節點合併
+    //         }
+    //       }
+    //     });
+    //     console.log("All modified tags have been cleared.");
+    //   }
     const traverseAndModify = (root) => {
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
             acceptNode: (node) => {
@@ -97,7 +140,7 @@ function enableFeature() {
         });
         let node;
         while ((node = walker.nextNode())) {
-            convertTextToUppercase(node);
+            convertText(node);
         }
     };
     traverseAndModify(document.body); // 執行靜態文本修改
@@ -109,7 +152,7 @@ function enableFeature() {
                 }
             });
             if (mutation.type === 'characterData') {
-                convertTextToUppercase(mutation.target);
+                convertText(mutation.target);
             }
         });
     });
@@ -118,7 +161,6 @@ function enableFeature() {
         subtree: true,
         characterData: true,
     });
-    console.log('Text content successfully converted to uppercase and monitored!');
 }
 function disableFeature() {
     console.log("功能已禁用");

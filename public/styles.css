@@ -6,6 +6,8 @@
     border-radius: 30px; 
     transition: background-color 0.3s; 
     cursor: default;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .circle-switch input {
@@ -32,4 +34,5 @@
 
 #title {
     color: #ccc; 
+    text-align: center;
 }
