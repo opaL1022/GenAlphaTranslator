@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Popup</title>
+    <title>skibidi slider</title>
+    <style>
+        #text-container {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            white-space: pre-wrap;
+            color: #ccc;
+        }
+    </style>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +23,8 @@
         <label for="circleToggle" class="circle"></label>
     </div>
     <div id="sliderContainer">
-        <h2 id = "title">Skibidi density</h2>
+        <div id="text-container">skibidi density: 0</div>
+        </div>
         <input type="range" id="slider" min="0" max="100" value="0">
         <p>Current Value: <span id="sliderValue"></span></p>
     </div>

@@ -46,12 +46,15 @@ module.exports = /*#__PURE__*/JSON.parse('{"expert":["skibidi","slay"],"experts"
   \************************/
 
 const dict = __webpack_require__(/*! ../public/dictionary.json */ "./public/dictionary.json");
+const dictArray = Object.values(dict).flat();
+const regex = /(\s+|[.,!?;(){}[\]"':])/;
+const textContainer = document.getElementById("text-container");
+let originalTextMap = new Map();
 if (!dict) {
     console.log("dictionary.json is empty");
 }
 console.log(dict);
 console.log('Content script loaded!');
-let density = 0;
 function ensureDomReady(callback) {
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
         callback();
@@ -61,22 +64,40 @@ function ensureDomReady(callback) {
         window.addEventListener('DOMContentLoaded', callback, { once: true });
     }
 }
+let density = 0;
+let curState = false;
+let debounceTimer = null;
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "enable") {
         ensureDomReady(enableFeature);
+        curState = true;
         sendResponse({ status: "success" });
     }
     else if (message.action === "disable") {
         disableFeature();
+        curState = false;
         sendResponse({ status: "success" });
     }
-    else if (message.sliderValue !== undefined) {
+    else if (message.sliderValue !== undefined && curState) {
         console.log("Received slider value:", message.sliderValue);
         density = message.sliderValue;
-        window.location.reload();
-        ensureDomReady(enableFeature);
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(() => {
+            restoreOriginalText();
+            setTimeout(() => {
+                clearModifiedTags();
+            }, 0);
+            setTimeout(() => {
+                ensureDomReady(enableFeature);
+            }, 0);
+        }, 300); // 延遲 300 毫秒發送訊息，根據需求調整時間
         sendResponse({ status: "success" }); // 回應消息
         return true;
+    }
+    else {
+        sendResponse({ status: "failed" });
     }
 });
 function enableFeature() {
@@ -84,24 +105,34 @@ function enableFeature() {
     const convertText = (node) => {
         if (node.nodeType === Node.TEXT_NODE) {
             const parent = node.parentElement;
-            if (parent && !parent.dataset.modified) {
+            // 如果該節點未被修改過，則儲存原始文本並進行修改
+            if (parent && !parent.hasAttribute('data-modified')) {
                 let context = [];
+                // 儲存原始文本
+                if (node.nodeValue !== null && !originalTextMap.has(node)) {
+                    originalTextMap.set(node, node.nodeValue); // 保存原始文本
+                    console.log('Original text saved:', node.nodeValue);
+                }
                 if (node.nodeValue) {
-                    let texts = node.nodeValue.split(/(\s+|[.,!?;(){}[\]"':])/).filter(Boolean);
+                    let texts = node.nodeValue.split(regex).filter(Boolean);
                     for (let i = 0; i < texts.length; i++) {
                         let word = texts[i].toLowerCase();
                         let cap = /^[A-Z]$/.test(texts[i].charAt(0));
-                        if (word in dict) {
-                            let text = dict[word][0];
+                        if (regex.test(texts[i].charAt(0))) {
+                            context.push(texts[i]);
+                        }
+                        else if (word in dict) {
+                            let textLen = dict[word].length;
+                            let textIndex = Math.floor(Math.random() * textLen);
+                            let text = dict[word][textIndex]; // 隨機替換文本
                             context.push(cap ? text.charAt(0).toUpperCase() + text.slice(1) : text);
                         }
                         else {
                             const randomNum = Math.floor(Math.random() * 100);
                             if (randomNum < density) {
-                                const dictRand = Object.values(dict);
-                                const dictLen = dictRand.length;
+                                const dictLen = dictArray.length;
                                 const dictRandNum = Math.floor(Math.random() * dictLen);
-                                let text = dictRand[dictRandNum][0]; //TODO 記得改
+                                let text = dictArray[dictRandNum]; // 隨機替換文本
                                 context.push(cap ? text.charAt(0).toUpperCase() + text.slice(1) : text);
                             }
                             else {
@@ -110,24 +141,13 @@ function enableFeature() {
                         }
                     }
                 }
+                // 修改文本並標註已修改
                 node.nodeValue = context.join('');
-                parent.dataset.modified = 'true';
+                parent.setAttribute('data-modified', 'true');
+                console.log('Text modified:', node.nodeValue);
             }
         }
     };
-    // function clearModifiedTags(): void {
-    //     const modifiedNodes = document.querySelectorAll('[data-modified="true"]');
-    //     modifiedNodes.forEach((node) => {
-    //       node.removeAttribute('data-modified'); // 移除標記
-    //       if (node.nodeType === Node.TEXT_NODE) {
-    //         const parent = node.parentElement;
-    //         if (parent) {
-    //           parent.normalize(); // 將文本節點合併
-    //         }
-    //       }
-    //     });
-    //     console.log("All modified tags have been cleared.");
-    //   }
     const traverseAndModify = (root) => {
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
             acceptNode: (node) => {
@@ -143,7 +163,8 @@ function enableFeature() {
             convertText(node);
         }
     };
-    traverseAndModify(document.body); // 執行靜態文本修改
+    traverseAndModify(document.body); // 遍歷並修改頁面文本
+    // 設置監聽，處理新增節點和修改的文本
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
@@ -164,7 +185,33 @@ function enableFeature() {
 }
 function disableFeature() {
     console.log("功能已禁用");
-    window.location.reload();
+    //window.location.reload();
+    restoreOriginalText();
+    setTimeout(() => {
+        clearModifiedTags();
+    }, 0);
+}
+function restoreOriginalText() {
+    // 恢復所有已修改節點的原始文本
+    originalTextMap.forEach((originalText, node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            node.nodeValue = originalText; // 恢復原始文本
+            originalTextMap.delete(node); // 刪除已恢復的文本映射
+        }
+    });
+    console.log("所有文本已恢复原状");
+}
+function clearModifiedTags() {
+    // 獲取所有已標記為修改過的元素
+    const modifiedNodes = document.querySelectorAll('[data-modified="true"]');
+    modifiedNodes.forEach((node) => {
+        // 只有在元素節點的情況下才移除標籤
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const parent = node;
+            parent.removeAttribute('data-modified'); // 清除標籤
+        }
+    });
+    console.log("所有已修改的标记已清除");
 }
 
 })();
