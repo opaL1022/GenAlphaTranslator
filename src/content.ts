@@ -8,20 +8,34 @@ console.log('Content script loaded!');
 
 let density = 0;
 
-function ensureDomReady(callback: () => void): void {
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        callback();
-    } else {
-        // 如果 DOM 尚未準備好，等到 loaded 時再執行 callback
-        window.addEventListener('DOMContentLoaded', callback, { once: true });
+const originalTexts = new Map<Node, string>();
+
+function savePageSnapshot(root: Node): void {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+        originalTexts.set(node, node.nodeValue || ""); // 保存每個文本節點的原始值
     }
+    console.log("Original text snapshot saved.");
 }
+
+function restoreFromSnapshot(): void {
+    originalTexts.forEach((value, node) => {
+        node.nodeValue = value; // 恢復文本
+    });
+    console.log("All texts restored from snapshot.");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    savePageSnapshot(document.body); // 保存頁面快照
+    console.log("Original text snapshot saved.");
+});
 
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-
     if (message.action === "enable") {
-        ensureDomReady(enableFeature);
+        savePageSnapshot(document.body); //想辦法一開始就存
+        enableFeature();
         sendResponse({ status: "success" });
     } else if (message.action === "disable") {
         disableFeature();
@@ -29,19 +43,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }else if (message.sliderValue !== undefined) {
         console.log("Received slider value:", message.sliderValue);
         density = message.sliderValue;
-        window.location.reload();
-  
-        ensureDomReady(enableFeature);
-     
+        restoreFromSnapshot();
+        enableFeature();
         sendResponse({ status: "success" }); // 回應消息
         return true;
     }
-
 });
-
+function clearModifiedTags(): void {
+    const modifiedNodes = document.querySelectorAll('[data-modified="true"]');
+    modifiedNodes.forEach((node) => {
+      node.removeAttribute('data-modified'); // 移除標記
+      if (node.nodeType === Node.TEXT_NODE) {
+        const parent = node.parentElement;
+        if (parent) {
+          parent.normalize(); // 將文本節點合併
+        }
+      }
+    });
+    console.log("All modified tags have been cleared.");
+  }
 
 
 function enableFeature(): void {//啟用插件
+ 
+    clearModifiedTags();
     console.log("功能已啟用");
     const convertText = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -79,19 +104,7 @@ function enableFeature(): void {//啟用插件
         }
     };
 
-    // function clearModifiedTags(): void {
-    //     const modifiedNodes = document.querySelectorAll('[data-modified="true"]');
-    //     modifiedNodes.forEach((node) => {
-    //       node.removeAttribute('data-modified'); // 移除標記
-    //       if (node.nodeType === Node.TEXT_NODE) {
-    //         const parent = node.parentElement;
-    //         if (parent) {
-    //           parent.normalize(); // 將文本節點合併
-    //         }
-    //       }
-    //     });
-    //     console.log("All modified tags have been cleared.");
-    //   }
+    
     
     const traverseAndModify = (root: Node) => {// 遍歷 DOM 並應用替換
         const walker = document.createTreeWalker(
@@ -139,5 +152,7 @@ function enableFeature(): void {//啟用插件
 
 function disableFeature(): void {// 禁用插件
     console.log("功能已禁用");
+    
+    clearModifiedTags();
     window.location.reload();
 }
