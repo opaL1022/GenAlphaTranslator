@@ -13,13 +13,13 @@ chrome.storage.sync.get("checkboxState", (data) => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const activeTab = tabs[0];
             if (circleToggle.checked) {
-                circleSwitch.style.backgroundColor = '#4CAF50'; // ON 状态背景色
+                circleSwitch.style.backgroundColor = '#4CAF50';
                 console.log('Switch is ON');
                 changeTitle.style.color = '#4CAF50';
                 chrome.tabs.sendMessage(activeTab.id, { action: "enable" });
             }
             else {
-                circleSwitch.style.backgroundColor = '#ccc'; // OFF 状态背景色
+                circleSwitch.style.backgroundColor = '#ccc';
                 console.log('Switch is OFF');
                 changeTitle.style.color = '#ccc';
                 chrome.tabs.sendMessage(activeTab.id, { action: "disable" });
@@ -35,13 +35,13 @@ circleToggle.addEventListener('change', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
         if (circleToggle.checked) {
-            circleSwitch.style.backgroundColor = '#4CAF50'; // ON 状态背景色
+            circleSwitch.style.backgroundColor = '#4CAF50';
             console.log('Switch is ON');
             changeTitle.style.color = '#4CAF50';
             chrome.tabs.sendMessage(activeTab.id, { action: "enable" });
         }
         else {
-            circleSwitch.style.backgroundColor = '#ccc'; // OFF 状态背景色
+            circleSwitch.style.backgroundColor = '#ccc';
             console.log('Switch is OFF');
             changeTitle.style.color = '#ccc';
             chrome.tabs.sendMessage(activeTab.id, { action: "disable" });
