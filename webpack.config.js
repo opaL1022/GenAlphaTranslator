@@ -11,7 +11,7 @@ module.exports = {
     filename: '[name].js'
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: ['.ts', '.js', '.json']
   },
   module: {
     rules: [
@@ -19,6 +19,10 @@ module.exports = {
         test: /\.ts$/,
         use: 'ts-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.json$/,
+        type: 'json'
       }
     ]
   },

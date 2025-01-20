@@ -1,36 +1,33 @@
-/* 開關的外框樣式 */
 .circle-switch {
     position: relative;
-    width: 80px; /* 開關的總寬度 */
-    height: 30px; /* 開關的總高度 */
-    background-color: #ccc; /* OFF 狀態背景色 */
-    border-radius: 30px; /* 使背景呈圓形 */
-    transition: background-color 0.3s; /* 平滑過渡效果 */
+    width: 80px; 
+    height: 30px; 
+    background-color: #ccc; 
+    border-radius: 30px; 
+    transition: background-color 0.3s; 
     cursor: default;
 }
 
-/* 隱藏 checkbox */
 .circle-switch input {
     display: none;
 }
 
-/* 圓形滑塊 */
 .circle {
     position: absolute;
     width: 26px;
     height: 26px;
     background-color: white;
-    border-radius: 50%; /* 圓形 */
-    top: 2px; /* 與開關頂部的距離 */
-    left: 2px; /* 初始位置，靠左 */
-    transition: transform 0.3s; /* 平滑移動 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 添加陰影 */
+    border-radius: 50%; 
+    top: 2px; 
+    left: 2px; 
+    transition: transform 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
     cursor: pointer;
 }
 
-/* 開啟 (ON) 狀態的滑塊位置 */
+
 .circle-switch input:checked + .circle {
-    transform: translateX(50px); /* 圓形滑塊向右移動 */
+    transform: translateX(50px);
 }
 
 #title {

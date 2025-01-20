@@ -1,3 +1,9 @@
+const dict = require('../public/dictionary.json');
+
+if(!dict){
+    console.log("dictionary.json is empty");
+}
+console.log(dict);
 console.log('Content script loaded!');
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -8,23 +14,33 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-function enableFeature(): void {
+function enableFeature(): void {//啟用插件
     console.log("功能已啟用");
-    // 啟用功能的邏輯
-    // 將文本內容改為大寫
     const convertTextToUppercase = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
-            // 確保文本內容存在，並檢查是否已修改過
             const parent = node.parentElement;
             if (parent && !parent.dataset.modified) {
-                node.nodeValue = node.nodeValue?.toUpperCase() || '';
-                parent.dataset.modified = 'true'; // 添加標記，避免重複處理
+                let context = [];
+                if(node.nodeValue){
+                    let texts = node.nodeValue.split(/(\s+|[.,!?;(){}[\]"':])/).filter(Boolean);
+                    for(let i = 0; i < texts.length; i++){
+                        let word = texts[i].toLowerCase();
+                        if(word in dict){
+                            let cap = /^[A-Z]$/.test(texts[i].charAt(0));
+                            let text = dict[word][0];
+                            context.push(cap ? text.charAt(0).toUpperCase() + text.slice(1) : text);
+                        }else{
+                            context.push(texts[i]);
+                        }
+                    }
+                }
+                node.nodeValue = context.join('');
+                parent.dataset.modified = 'true';
             }
         }
     };
     
-    // 遍歷 DOM 並應用替換
-    const traverseAndModify = (root: Node) => {
+    const traverseAndModify = (root: Node) => {// 遍歷 DOM 並應用替換
         const walker = document.createTreeWalker(
         root,
         NodeFilter.SHOW_TEXT,
@@ -44,40 +60,32 @@ function enableFeature(): void {
         }
     };
     
-    // 執行靜態文本修改
-    traverseAndModify(document.body);
     
-    // 監聽 DOM 的動態變化，處理新增節點和被覆蓋的文本
-    const observer = new MutationObserver((mutations) => {
+    traverseAndModify(document.body);// 執行靜態文本修改
+    
+    const observer = new MutationObserver((mutations) => {// 監聽 DOM 的動態變化，處理新增節點和被覆蓋的文本
         mutations.forEach((mutation) => {
-        // 處理新增節點
         mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
             traverseAndModify(node);
             }
         });
-        // 處理已存在節點的變化
         if (mutation.type === 'characterData') {
             convertTextToUppercase(mutation.target);
         }
         });
     });
     observer.observe(document.body, {
-        childList: true, // 監聽子節點的新增或刪除
-        subtree: true, // 監聽整個子樹
-        characterData: true, // 監聽文本內容的變化
+        childList: true, 
+        subtree: true, 
+        characterData: true,
     });
     
     console.log('Text content successfully converted to uppercase and monitored!');
   
 }
 
-function disableFeature(): void {
+function disableFeature(): void {// 禁用插件
     console.log("功能已禁用");
-    // 禁用功能的邏輯
     window.location.reload();
 }
-
-
-
-
